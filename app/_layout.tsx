@@ -1,3 +1,4 @@
+import 'react-native-get-random-values'; // Must be first import for crypto polyfill
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import 'react-native-reanimated'; 
@@ -12,13 +13,13 @@ export default function RootLayout() {
   return (
     showSplashscreen ? (
       <SplashScreen Oncomplete={() => setSplashscreen(false)} />
-    ): showLoginscreen ? 
-    ( 
-      <LoginScreen onComplete={() => setLoginscreen(false)}/>
-    ):
-    <Stack>
+    ) : showLoginscreen ? (
+      <LoginScreen onComplete={() => setLoginscreen(false)} />
+    ) : (
+      <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
+    )
   );
 }
 
