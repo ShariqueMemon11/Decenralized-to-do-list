@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { useRouter } from 'expo-router';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const login = async () => {
+  const register = async () => {
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // After successful login, navigate to root for auth-aware redirect
-      router.replace('/walletconnection');
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Optional: Redirect to login after registration
+      router.replace('/(Screens)/login');
     } catch (e) {
       setError(e.message);
     }
@@ -27,11 +27,11 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Image
-        source={require('../../assets/images/splashimg.png')}
+        source={require('../../assets/images/splashimg.webp')}
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Register</Text>
       <TextInput
         placeholder="Email"
         placeholderTextColor="#888"
@@ -49,11 +49,11 @@ export default function LoginScreen() {
         secureTextEntry
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={login}>
-        <Text style={styles.buttonText}>Login</Text>
+      <TouchableOpacity style={styles.button} onPress={register}>
+        <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.replace('/(Screens)/Register')}>
-        <Text style={styles.link}>New here? Register</Text>
+      <TouchableOpacity onPress={() => router.replace('/(Screens)/login')}>
+        <Text style={styles.link}>Already have an account? Login</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );

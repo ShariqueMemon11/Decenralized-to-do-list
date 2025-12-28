@@ -6,14 +6,22 @@
     "orientation": "portrait",
     "scheme": "todolist",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splashimg.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "wallet",
+          "metamask",
+          "trust",
+          "rainbow",
+          "argent"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,18 +29,23 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.shariq1122.ToDo_list"
+      "package": "com.shariq1122.todolist"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bc4d6dc0-186a-4b61-8521-ba48d892e861"
+      }
     }
   }
 }

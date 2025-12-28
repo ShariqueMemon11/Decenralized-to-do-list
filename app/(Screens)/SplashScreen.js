@@ -1,15 +1,7 @@
 import { View, StyleSheet, StatusBar, Image } from 'react-native'
-import React, { useEffect } from 'react'
+import React from 'react'
 
-const SplashScreen = ({Oncomplete}) => {
-    
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            Oncomplete();
-        }, 3000);
-        
-        return () => clearTimeout(timer);
-    }, [Oncomplete]);
+const SplashScreen = () => {
 
     return (
         <View style={styles.container}>
