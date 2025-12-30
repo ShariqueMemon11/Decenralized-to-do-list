@@ -277,7 +277,7 @@ export default function WalletConnectionScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/images/splashimg.png')}
+        source={require('../../assets/images/splashimg.png')}
         style={styles.logo}
         resizeMode="contain"
       />
