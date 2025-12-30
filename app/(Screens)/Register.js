@@ -27,7 +27,7 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Image
-        source={require('../../assets/images/splashimg.png')}
+        source={require('../assets/images/splashimg.png')}
         style={styles.logo}
         resizeMode="contain"
       />

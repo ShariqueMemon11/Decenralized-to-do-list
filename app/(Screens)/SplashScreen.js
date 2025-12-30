@@ -7,7 +7,7 @@ const SplashScreen = () => {
         <View style={styles.container}>
             <Image
               style={styles.img}
-              source={require('../../assets/images/splashimg.png')}
+              source={require('../assets/images/splashimg.png')}
               resizeMode="contain"
             />
             <StatusBar barStyle="dark-content"/>
