@@ -33,9 +33,14 @@
       "intentFilters": [
         {
           "action": "VIEW",
+          "autoVerify": true,
           "data": [
             {
-              "scheme": "wc"
+              "scheme": "todolist"
+            },
+            {
+              "scheme": "wc",
+              "host": "*"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
