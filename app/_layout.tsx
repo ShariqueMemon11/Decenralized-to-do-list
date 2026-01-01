@@ -1,3 +1,5 @@
+import 'react-native-get-random-values';
+import 'fast-text-encoding';
 import { Stack } from "expo-router";
 import { AuthProvider } from "../services/AuthContext";
 
