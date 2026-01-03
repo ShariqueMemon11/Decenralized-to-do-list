@@ -1,4 +1,5 @@
-import '../app/polyfills';
+import './polyfills';
+
 
 import { Stack } from "expo-router";
 import { AuthProvider } from "../services/AuthContext";
