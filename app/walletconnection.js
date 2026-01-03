@@ -1,4 +1,4 @@
-import './polyfills'; // Import polyfills FIRST
+import '../polyfills'; // Import polyfills FIRST
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -19,46 +19,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const WALLETCONNECT_PROJECT_ID = '8795a532fe887db4cc95fb9fac373566';
 
-// Create a proper storage adapter for WalletConnect v2
-// WalletConnect expects string values, not parsed JSON
-const createAsyncStorageAdapter = () => {
-  return {
-    getItem: async (key) => {
-      try {
-        const value = await AsyncStorage.getItem(key);
-        // Return string or null (WalletConnect handles JSON parsing internally)
-        return value;
-      } catch (error) {
-        console.error('Storage getItem error:', error);
-        return null;
-      }
-    },
-    setItem: async (key, value) => {
-      try {
-        // WalletConnect passes string values, store as-is
-        await AsyncStorage.setItem(key, value);
-      } catch (error) {
-        console.error('Storage setItem error:', error);
-      }
-    },
-    removeItem: async (key) => {
-      try {
-        await AsyncStorage.removeItem(key);
-      } catch (error) {
-        console.error('Storage removeItem error:', error);
-      }
-    },
-    getKeys: async () => {
-      try {
-        return await AsyncStorage.getAllKeys();
-      } catch (error) {
-        console.error('Storage getKeys error:', error);
-        return [];
-      }
-    },
-  };
-};
-
 let web3WalletInstance = null;
 
 export default function WalletConnectionScreen() {
@@ -66,6 +26,7 @@ export default function WalletConnectionScreen() {
   const [address, setAddress] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [error, setError] = useState(null);
 
   const router = useRouter();
   const initialized = useRef(false);
@@ -88,20 +49,32 @@ export default function WalletConnectionScreen() {
   }, []);
 
   const initializeWalletConnect = async () => {
-    // Prevent duplicate initialization
-    if (web3WalletInstance) {
-      console.log('✅ WalletConnect already initialized');
-      return;
-    }
-    
     try {
       console.log('🚀 Starting WalletConnect initialization...');
 
-      const storageAdapter = createAsyncStorageAdapter();
-      
+      // Test if crypto is available
+      if (typeof global.crypto === 'undefined' || !global.crypto.getRandomValues) {
+        throw new Error('Crypto polyfill not loaded correctly');
+      }
+
+      // Test crypto
+      const testArray = new Uint8Array(16);
+      global.crypto.getRandomValues(testArray);
+      console.log('✅ Crypto polyfill working');
+
+      // Test Buffer
+      if (typeof global.Buffer === 'undefined') {
+        throw new Error('Buffer polyfill not loaded');
+      }
+      console.log('✅ Buffer polyfill working');
+
+      // Clear old sessions
+      await AsyncStorage.removeItem('wc@2:core:0.3//keychain');
+      await AsyncStorage.removeItem('wc@2:client:0.3//session');
+      console.log('✅ Cleared old WalletConnect sessions');
+
       const core = new Core({
         projectId: WALLETCONNECT_PROJECT_ID,
-        storage: storageAdapter,
       });
 
       console.log('✅ Core initialized');
@@ -112,57 +85,45 @@ export default function WalletConnectionScreen() {
           name: 'D-Todo',
           description: 'Decentralized To-Do List',
           url: 'https://d-todo.app',
-          icons: ['https://walletconnect.com/walletconnect-logo.svg'],
+          icons: ['https://avatars.githubusercontent.com/u/37784886'],
         },
       });
 
-      console.log('✅ Web3Wallet initialized');
+      console.log('✅ Web3Wallet initialized successfully');
 
       // Set up event listeners
       web3WalletInstance.on('session_proposal', onSessionProposal);
       web3WalletInstance.on('session_delete', onSessionDelete);
 
-      // Check for existing active sessions (session restoration)
-      const activeSessions = web3WalletInstance.getActiveSessions();
-      console.log('📋 Active sessions found:', Object.keys(activeSessions).length);
-
-      if (Object.keys(activeSessions).length > 0) {
-        // Restore the first active session
-        const session = Object.values(activeSessions)[0];
-        const accounts = session.namespaces?.eip155?.accounts || [];
-        
-        if (accounts.length > 0) {
-          const walletAddress = accounts[0].split(':')[2];
-          console.log('✅ Restored session with address:', walletAddress);
-          
-          setAddress(walletAddress);
-          setIsConnected(true);
-          setInitializing(false);
-          
-          // Auto-navigate to tabs since wallet is already connected
-          setTimeout(() => {
-            router.replace('/(tabs)');
-          }, 500);
-          return;
-        }
-      }
-
       setInitializing(false);
+      setError(null);
       console.log('✅ WalletConnect is ready!');
 
     } catch (err) {
       console.error('❌ WalletConnect init error:', err);
-      console.error('Error details:', err.message);
-      console.error('Full error:', err);
+      console.error('Error name:', err.name);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
       
       setInitializing(false);
+      setError(err.message);
 
-      // Don't show alert on first initialization failure - just log it
-      // User can retry by pressing the connect button
-      console.log('⚠️ WalletConnect initialization failed, but user can still try to connect');
-      
-      // Reset initialized flag so user can retry
-      initialized.current = false;
+      Alert.alert(
+        'Initialization Failed',
+        `Error: ${err.message}\n\nPlease restart the app.`,
+        [
+          {
+            text: 'Retry',
+            onPress: () => {
+              initialized.current = false;
+              setInitializing(true);
+              setError(null);
+              setTimeout(() => initializeWalletConnect(), 1000);
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
     }
   };
 
@@ -171,7 +132,6 @@ export default function WalletConnectionScreen() {
       console.log('📱 Session proposal received');
       const { id, params } = proposal;
 
-      // Get the first account from the proposal
       const proposedChains = params.requiredNamespaces?.eip155?.chains || ['eip155:1'];
       const proposedMethods = params.requiredNamespaces?.eip155?.methods || [
         'eth_sendTransaction',
@@ -191,13 +151,13 @@ export default function WalletConnectionScreen() {
             chains: proposedChains,
             methods: proposedMethods,
             events: proposedEvents,
+            accounts: proposedChains.map(chain => `${chain}:0x0000000000000000000000000000000000000000`),
           },
         },
       });
 
       console.log('✅ Session approved');
 
-      // Extract the actual wallet address from the session
       if (session?.namespaces?.eip155?.accounts?.[0]) {
         const account = session.namespaces.eip155.accounts[0].split(':')[2];
         setAddress(account);
@@ -207,7 +167,6 @@ export default function WalletConnectionScreen() {
       setLoading(false);
       Alert.alert('Success', 'Wallet connected successfully!');
       
-      // Navigate to tabs after a short delay
       setTimeout(() => {
         router.replace('/(tabs)');
       }, 500);
@@ -242,7 +201,6 @@ export default function WalletConnectionScreen() {
     try {
       let uri = url;
       
-      // Extract URI from different formats
       if (url.includes('uri=')) {
         uri = decodeURIComponent(url.split('uri=')[1].split('&')[0]);
       } else if (url.includes('wc:')) {
@@ -259,66 +217,33 @@ export default function WalletConnectionScreen() {
   };
 
   const connectWallet = async () => {
-    // If WalletConnect is not initialized, try to initialize it first
     if (!web3WalletInstance) {
-      console.log('⚠️ WalletConnect not initialized, attempting to initialize...');
-      setLoading(true);
-      
-      try {
-        await initializeWalletConnect();
-        
-        // Wait a bit for initialization to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (!web3WalletInstance) {
-          setLoading(false);
-          Alert.alert(
-            'Initialization Failed',
-            'Failed to initialize WalletConnect. Please try again or restart the app.',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-      } catch (err) {
-        console.error('❌ Retry initialization error:', err);
-        setLoading(false);
-        Alert.alert(
-          'Initialization Error',
-          'Failed to initialize WalletConnect. Please restart the app.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
+      Alert.alert('Error', 'WalletConnect not initialized. Please restart the app.');
+      return;
     }
 
     setLoading(true);
 
     try {
-      const { uri, approval } = await web3WalletInstance.core.pairing.create();
+      const { uri } = await web3WalletInstance.core.pairing.create();
       
       console.log('🔗 Connection URI created');
 
-      // Try different wallet apps
       const metamaskUrl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
       const trustWalletUrl = `trust://wc?uri=${encodeURIComponent(uri)}`;
       const universalUrl = `https://metamask.app.link/wc?uri=${encodeURIComponent(uri)}`;
 
       let opened = false;
 
-      // Try MetaMask
       if (await Linking.canOpenURL('metamask://')) {
         console.log('📱 Opening MetaMask...');
         await Linking.openURL(metamaskUrl);
         opened = true;
-      }
-      // Try Trust Wallet
-      else if (await Linking.canOpenURL('trust://')) {
+      } else if (await Linking.canOpenURL('trust://')) {
         console.log('📱 Opening Trust Wallet...');
         await Linking.openURL(trustWalletUrl);
         opened = true;
-      }
-      // Fallback to universal link
-      else {
+      } else {
         console.log('📱 Opening via universal link...');
         await Linking.openURL(universalUrl);
         opened = true;
@@ -340,7 +265,6 @@ export default function WalletConnectionScreen() {
         );
       }
 
-      // Set timeout for connection
       setTimeout(() => {
         if (loading) {
           setLoading(false);
@@ -349,7 +273,7 @@ export default function WalletConnectionScreen() {
             'Connection request timed out. Please try again.'
           );
         }
-      }, 90000); // 90 seconds
+      }, 90000);
 
     } catch (err) {
       console.error('❌ Connect error:', err);
@@ -367,6 +291,9 @@ export default function WalletConnectionScreen() {
         />
         <ActivityIndicator size="large" color="#50fa7b" style={styles.loader} />
         <Text style={styles.initText}>Initializing WalletConnect...</Text>
+        {error && (
+          <Text style={styles.errorText}>Error: {error}</Text>
+        )}
       </View>
     );
   }
@@ -491,5 +418,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 20,
     fontSize: 16,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    marginTop: 10,
+    fontSize: 12,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
