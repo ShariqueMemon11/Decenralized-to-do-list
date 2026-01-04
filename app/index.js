@@ -10,17 +10,17 @@ export default function Index() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 3000); // 2 sec splash
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
   if (showSplash) return <SplashScreen />;
 
-  // 🔐 AUTH FLOW
-  return user ? (
-    <Redirect href="/(tabs)" />
-  ) : (
-    <Redirect href="/(Screens)/login" />
-  );
+  if (!user) {
+    return <Redirect href="/(Screens)/login" />;
+  }
+
+  // 🔑 LOGGED IN → WALLET CONNECT
+  return <Redirect href="/(Screens)/WalletConnect" />;
 }
