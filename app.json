@@ -17,16 +17,13 @@
     },
 
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "metamask"
-        ]
-      }
+      "supportsTablet": true
     },
 
     "android": {
       "package": "com.shariq1122.todolist",
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+      "usesCleartextTraffic": true,
 
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
@@ -47,13 +44,13 @@
 
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "single"
     },
 
     "plugins": ["expo-router"],
 
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     },
 
     "extra": {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { useRouter } from 'expo-router';
@@ -12,11 +12,12 @@ export default function LoginScreen() {
 
   const login = async () => {
     setError('');
+    
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // After successful login, navigate to root for auth-aware redirect
-      router.replace('/walletconnection');
+      // Auth state change will trigger redirect in _layout
     } catch (e) {
+      console.error("Login Error:", e);
       setError(e.message);
     }
   };

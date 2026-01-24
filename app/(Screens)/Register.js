@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { useRouter } from 'expo-router';
@@ -12,11 +12,12 @@ export default function RegisterScreen() {
 
   const register = async () => {
     setError('');
+
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      // Optional: Redirect to login after registration
-      router.replace('/(Screens)/login');
+      // Auth state change will trigger redirect in _layout
     } catch (e) {
+      console.error("Register Error:", e);
       setError(e.message);
     }
   };
